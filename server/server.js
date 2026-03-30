@@ -9,6 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 let loginData = [];
+let registerData = [];
 app.get('/', (req, res)=>{
     res.json({
         data: loginData
@@ -22,6 +23,21 @@ app.post('/',(req,res)=>{
         message: "We are getting Data"
     })
 });
+
+app.get('/register', (req, res)=>{
+    res.json({
+        data: registerData
+    });
+});
+
+app.post('/register',(req,res)=>{
+    const data = req.body;
+    registerData.push(data);
+    res.json({
+        message: "We are getting Data"
+    })
+});
+
 
 app.listen(PORT, ()=>{
     console.log(`Server is running on ${PORT}`);
