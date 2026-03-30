@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 function Register() {
     const [ value, setValue ] = useState({
@@ -8,10 +9,24 @@ function Register() {
         password:""
     });
     const handleChange = (e)=>{
-
+        // setValue({...value,[e.target.name]:e.target.value});
+        
+        setValue(
+            (pre)=>{
+                return({
+                    ...pre,
+                    [e.target.name]:e.target.value
+                })
+            }
+        );
     }
-    const handleSubmit = (e)=>{
-
+    const handleSubmit = async(e)=>{
+        e.preventDefault();
+        try{
+            const res = await axios.post('https://ideal-orbit-4j9qp57x6g57hjwwx-8080.app.github.dev/register', value)
+        }catch(err){
+            console.log(err);
+        }
     }
 
     return (
