@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 
 function Register() {
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
     const [ value, setValue ] = useState({
         name:"",
         email:"",
@@ -27,7 +29,8 @@ function Register() {
             const res = await axios.post('https://ideal-orbit-4j9qp57x6g57hjwwx-8080.app.github.dev/register', value)
             
             console.log(res.data);
-
+            setSuccess(res.data.message);
+            setError("");
             setValue({
                 name:"",
                 email:"",
@@ -35,7 +38,17 @@ function Register() {
             })
 
         }catch(err){
+
             console.log(err);
+
+            if (err.response && err.response.data.error) {
+                setError(err.response.data.error);
+            } else {
+                setError("Something went wrong");
+            }
+
+            setSuccess("");
+
         }
     }
 
@@ -64,6 +77,9 @@ function Register() {
                 {/* Form */}
                 <form className="form" onSubmit={handleSubmit} >
                     
+                    {error && <p style={{ color: "red" }}>{error}</p>}
+                    {success && <p style={{ color: "green" }}>{success}</p>}
+
                     <input type="text" placeholder="Full Name" name="name" value={value.name} onChange={handleChange} required />
                     <input type="email" placeholder="Email" name="email" value={value.email} onChange={handleChange} required />
                     <input type="password" placeholder="Password" name="password" value={value.password} onChange={handleChange} required />
@@ -71,6 +87,7 @@ function Register() {
                     <button type="submit">
                         SIGN UP
                     </button>
+
                 </form>
             </div>
         </div>

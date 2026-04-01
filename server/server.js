@@ -1,6 +1,7 @@
 require('dotenv').config();
 const mysql = require('mysql2');
 const PORT = process.env.PORT || 8000
+const bcrypt = require('bcrypt');
 const express = require('express');
 const app = express();
 const cors = require("cors");
@@ -15,6 +16,7 @@ const db = mysql.createConnection({
         rejectUnauthorized: false
     }
 });
+
 db.connect((err) => {
     if (err) {
         console.log('Db not connected');
@@ -26,128 +28,110 @@ db.connect((err) => {
 app.use(cors());
 app.use(express.json());
 
-let loginData = [];
-
-app.get('/', (req, res) => {
-    return res.json({
-        data: loginData
-    });
-});
-
-app.post('/', (req, res) => {
-    const data = req.body;
-    loginData.push(data);
+app.post('/', async(req, res) => {
 
     const {email,password} = req.body;
-    db.query(
-        `SELECT * FROM users WHERE email=?`,
-        [email],
-        (err, result) => {
+    if (!email || !password ) {
+        return res.status(400).json(
+            { error: "All fields are required" }
+        );
+    }
 
-            if (err) {
-                return res.json({ error: 'DB error ❌' });
-            }
+    try{
+        const [rows] = await db.promise().query(
+            'SELECT * FROM users WHERE email=?',
+            [email]
+        );
 
-            if (result.length === 0) {
-                return res.json({ error: 'User not found ❌' });
-            }
-
-            const user = result[0];
-
-            if (password !== user.password) {
-                return res.json({ error: 'Wrong password ❌' });
-            }
-
-            return res.json({ message: 'Login Successfully ✅' });
-        }
-    );
-
-});
-
-app.get('/register', (req, res) => {
-    db.query(
-        `SELECT * FROM users`,
-        (err, result) => {
-            if (err){
-                return res.json({
-                    error: err
-                })
-            }
-            return res.json({
-                data: result
-            });
-        });
-});
-
-
-app.post('/register', (req, res) => {
-
-    const { email, password, name } = req.body;
-    db.query(
-        `SELECT * FROM users WHERE email=?`,
-        [email],
-        (err, result) => {
-            if (result.length > 0) {
-                return res.json({
-                    error: "Change the email"
-                })
-            }
-            db.query(
-                `INSERT INTO users (email, password, name) VALUES(?,?,?)`,
-                [email, password, name],
-                (err, result) => {
-                    if (err) {
-                        return res.json(
-                            {
-                                error: "Data not added in DB"
-                            }
-                        )
-                    } else {
-                        return res.json(
-                            {
-                                message: "Data added in DB"
-                            }
-                        )
-                    }
-
-                }
+        if (rows.length === 0) {
+            return res.json(
+                { error: 'User not found ❌' }
             );
         }
-    );
+
+        const user = rows[0];
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.json(
+                { error: 'Wrong password ❌' }
+            );
+        }
+
+        return res.json(
+            { message: 'Login Successfully ✅' }
+        );
+
+    }catch(error){
+        return res.status(500).json({
+            error: "Server error for Login Post"
+        });
+    }
+
 });
 
-// app.post('/register',(req,res)=>{
-//     const data = req.body;
-//     const {email,password,name} = req.body;
-//     registerData.push(data);
-//     db.query(
-//         'SELECT * FROM users WHERE email = ?',
-//         [email],
-//         (err, result)=>{
-//             if(result.length > 0){
-//                 res.json({
-//                     error:'Change the email'
-//                 });
-//             }
+app.get('/users', async(req, res) => {
+    try{
+        const [rows] = await db.promise().query(
+            `SELECT * FROM users`
+        );
+        return res.json(
+            {
+                data:rows
+            }
+        );
+    }catch(err){
+        return res.status(500).json({
+            error: "Server error for Users"
+        });
+    }
 
-//             db.query(
-//                 `INSERT INTO users (email,password,name) VALUES (?,?,?)`,
-//                 [email,password,name],
-//                 (err,result)=>{
-//                     if(err){
-//                         res.json({
-//                             error:'Data not added'
-//                         })
-//                     }
-//                 }
-//             );
-//         }
-//     );
-//     res.json({
-//         message: "We are getting Data"
-//     })
-// });
+});
 
+
+app.post('/register', async(req, res)=>{
+    const {email, password, name}= req.body;
+    if (!email || !password || !name) {
+        return res.status(400).json(
+            { error: "All fields are required" }
+        );
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json(
+            { error: "Password must be at least 6 characters" }
+        );
+    }
+    try{
+        const [rows] = await db.promise().query(
+            `SELECT * FROM users WHERE email=?`,
+            [email]
+        );
+        if(rows.length > 0){
+            return res.json({
+                error:'User alrady exists'
+            })
+        }
+        const hashPassword = await bcrypt.hash(password, 10);
+        await db.promise().query(
+            `INSERT INTO users (email, password, name) VALUES (?,?,?)`,
+            [email, hashPassword, name]
+        );
+        return res.json(
+            {
+                message:'User Registered'
+            }
+        );
+
+    }catch(error){
+        return res.json(
+            {
+                error: 'Server error'
+            }
+        )
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);

@@ -8,7 +8,8 @@ function Login() {
         email:"",
         password:""
     });
-    const [message, SetMessage] = useState("");
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
     const handleChange = (e)=>{
         const {name, value} = e.target
@@ -28,7 +29,7 @@ function Login() {
                 "https://ideal-orbit-4j9qp57x6g57hjwwx-8080.app.github.dev/",
                 value
             );
-            SetMessage(res.data.message);
+            setSuccess(res.data.message);
 
             console.log(res.data);
 
@@ -39,6 +40,14 @@ function Login() {
 
         }catch(err){
             console.log(err);
+
+            if (err.response && err.response.data.error) {
+                setError(err.response.data.error);
+            } else {
+                setError("Something went wrong");
+            }
+
+            setSuccess("");
         }
 
     }
@@ -68,6 +77,9 @@ function Login() {
                 {/* Form */}
                 <form className="form" onSubmit={handleSubmit}>
 
+                    {error && <p style={{ color: "red" }}>{error}</p>}
+                    {success && <p style={{ color: "green" }}>{success}</p>}
+
                     <input type="email" placeholder="Email" name="email" value={value.email} onChange={handleChange} required />
                     <input type="password" placeholder="Password" name="password" value={value.password} onChange={handleChange} required />
 
@@ -75,7 +87,7 @@ function Login() {
                         SIGN IN
                     </button>
                 </form>
-                { message?<p>{message}</p>:''}
+                
             </div>
         </div>
     );
