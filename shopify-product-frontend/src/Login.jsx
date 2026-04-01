@@ -8,6 +8,7 @@ function Login() {
         email:"",
         password:""
     });
+    const [message, SetMessage] = useState("");
 
     const handleChange = (e)=>{
         const {name, value} = e.target
@@ -20,11 +21,22 @@ function Login() {
     const handleSubmit = async(e)=>{
         e.preventDefault();
         try{
-            console.log(value);
+
+            // console.log(value);
+
             const res = await axios.post(
                 "https://ideal-orbit-4j9qp57x6g57hjwwx-8080.app.github.dev/",
                 value
-                );
+            );
+            SetMessage(res.data.message);
+
+            console.log(res.data);
+
+            setValue({
+                email:"",
+                password:""
+            });
+
         }catch(err){
             console.log(err);
         }
@@ -56,13 +68,14 @@ function Login() {
                 {/* Form */}
                 <form className="form" onSubmit={handleSubmit}>
 
-                    <input type="email" placeholder="Email" name="email" value={value.email} onChange={handleChange} />
-                    <input type="password" placeholder="Password" name="password" value={value.password} onChange={handleChange} />
+                    <input type="email" placeholder="Email" name="email" value={value.email} onChange={handleChange} required />
+                    <input type="password" placeholder="Password" name="password" value={value.password} onChange={handleChange} required />
 
                     <button type="submit">
                         SIGN IN
                     </button>
                 </form>
+                { message?<p>{message}</p>:''}
             </div>
         </div>
     );

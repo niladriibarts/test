@@ -23,7 +23,17 @@ function Register() {
     const handleSubmit = async(e)=>{
         e.preventDefault();
         try{
+
             const res = await axios.post('https://ideal-orbit-4j9qp57x6g57hjwwx-8080.app.github.dev/register', value)
+            
+            console.log(res.data);
+
+            setValue({
+                name:"",
+                email:"",
+                password:""
+            })
+
         }catch(err){
             console.log(err);
         }
@@ -54,9 +64,9 @@ function Register() {
                 {/* Form */}
                 <form className="form" onSubmit={handleSubmit} >
                     
-                    <input type="text" placeholder="Full Name" name="name" value={value.name} onChange={handleChange} />
-                    <input type="email" placeholder="Email" name="email" value={value.email} onChange={handleChange} />
-                    <input type="password" placeholder="Password" name="password" value={value.password} onChange={handleChange} />
+                    <input type="text" placeholder="Full Name" name="name" value={value.name} onChange={handleChange} required />
+                    <input type="email" placeholder="Email" name="email" value={value.email} onChange={handleChange} required />
+                    <input type="password" placeholder="Password" name="password" value={value.password} onChange={handleChange} required />
 
                     <button type="submit">
                         SIGN UP
