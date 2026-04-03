@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios"
 
 function Login() {
@@ -10,6 +10,8 @@ function Login() {
     });
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+
+    const navigate = useNavigate();
 
     const handleChange = (e)=>{
         const {name, value} = e.target
@@ -37,6 +39,10 @@ function Login() {
                 email:"",
                 password:""
             });
+
+            localStorage.setItem('tokenKey', res.data.token);
+
+            navigate('/createproduct')
 
         }catch(err){
             console.log(err);
