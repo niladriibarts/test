@@ -1,4 +1,5 @@
 require('dotenv').config();
+const cookieParser = require('cookie-parser');
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -25,8 +26,34 @@ db.connect((err)=>{
     }
 });
 
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+    origin: "https://ideal-orbit-4j9qp57x6g57hjwwx-5173.app.github.dev", // your frontend
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+
+const verifyToken = (req,res,next)=>{
+    const token = req.cookies.tok;
+    if(!token){
+        return res.status(401).json({
+            error: "Access denied. No token provided"
+        });
+    }
+    try{
+        const verified =  jwt.verify(token,process.env.JWT_SECRET);
+        req.user = verified;
+        next();
+        
+    }catch(err){
+        res.json({
+            error:'Invalid token'
+        });
+    }
+}
+
 
 app.post('/', async(req, res)=>{
     const {email,password} = req.body;
@@ -57,18 +84,34 @@ app.post('/', async(req, res)=>{
             });
         }
         
+        // const token = jwt.sign(
+        //     {
+        //         id:user.id,
+        //         email:user.email
+        //     },
+        //     process.env.JWT_SECRET,
+        //     {expiresIn:'1d'}
+        // );
+
         const token = jwt.sign(
             {
                 id:user.id,
-                email:user.email
+                user: user.email
             },
             process.env.JWT_SECRET,
-            {expiresIn:'1d'}
+            {expiresIn: '10s'}
         );
 
+        res.cookie("tok", token,{
+                httpOnly: true,
+                secure: true,
+                sameSite: "None",
+                path: "/",
+                maxAge: 10 * 1000
+        });
+
         return res.json({
-            message:'Login successfully',
-            token
+            message:'Login successfully'
         });
 
     }catch(err){
@@ -128,6 +171,13 @@ app.post('/register', async(req, res)=>{
             error:'Server error'
         });
     }
+});
+
+app.post('/createproduct', verifyToken,(req, res)=>{
+    res.json({
+        message:"Welcome to dashboard",
+        user: req.user
+    });
 });
 
 app.listen(PORT, ()=>{
